@@ -1,0 +1,86 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+from django.views import generic
+
+from fitness_world.common.forms import CommentCreateForm
+from fitness_world.core.photo_utils import photo_likes_count, photo_is_liked_by_user
+from fitness_world.photos.forms import CreatePhotoForm, EditPhotoForm, DeletePhotoForm
+from fitness_world.photos.models import Photo
+
+
+class CreatePhotoView(LoginRequiredMixin, generic.CreateView):
+    form_class = CreatePhotoForm
+    template_name = 'photos/photo-add-page.html'
+    success_url = reverse_lazy('index')
+
+    def get_form_kwargs(self):
+        result = super().get_form_kwargs()
+        result['user'] = self.request.user
+
+        return result
+
+    def form_valid(self, form):
+        photo = form.save(commit=False)
+        photo.user = self.request.user
+        photo.save()
+        form.save_m2m()
+
+        return super().form_valid(form)
+
+
+class DetailsPhotoView(LoginRequiredMixin, generic.DetailView):
+    template_name = 'photos/photo-details-page.html'
+    model = Photo
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        photo_likes_count(self.object)
+        photo_is_liked_by_user(self.request, self.object)
+
+        context['is_owner'] = self.request.user == self.object.user
+        context['comment_form'] = CommentCreateForm()
+
+        return context
+
+
+class EditPhotoView(LoginRequiredMixin, generic.UpdateView):
+    template_name = 'photos/photo-edit-page.html'
+    form_class = EditPhotoForm
+    model = Photo
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+
+        kwargs['user'] = self.request.user
+
+        return kwargs
+
+    def get_success_url(self):
+        return reverse_lazy('details photo', kwargs={
+            'pk': self.object.pk
+        })
+
+
+@login_required
+def delete_photo(request, pk):
+    photo = Photo.objects.filter(pk=pk).get()
+
+    if request.method == 'GET':
+        form = DeletePhotoForm(instance=photo)
+    else:
+        form = DeletePhotoForm(request.POST, instance=photo)
+
+        if form.is_valid():
+            form.save()
+            return redirect('index')
+
+    context = {
+        'form': form,
+        'pk': pk,
+    }
+
+    return render(request, 'photos/photo-delete-page.html', context)
+
