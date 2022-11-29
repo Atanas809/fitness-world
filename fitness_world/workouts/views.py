@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
@@ -5,9 +6,13 @@ from django.urls import reverse_lazy
 from django.views import generic
 
 from fitness_world.common.forms import CommentCreateForm
+from fitness_world.common.views import page_not_found
+from fitness_world.core.core_utils import user_permissions
 from fitness_world.core.photo_utils import photo_likes_count, photo_is_liked_by_user
 from fitness_world.workouts.forms import WorkoutCreateForm, WorkoutEditForm, DeleteWorkoutForm
 from fitness_world.workouts.models import Workout
+
+UserModel = get_user_model()
 
 
 class CreateWorkoutView(LoginRequiredMixin, generic.CreateView):
@@ -34,7 +39,7 @@ class EditWorkoutView(LoginRequiredMixin, generic.UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('details workout', kwargs={
-            'username': self.request.user.username,
+            'username': self.object.user.username,
             'slug': self.object.slug,
         })
 
@@ -61,6 +66,9 @@ class DetailsWorkoutView(LoginRequiredMixin, generic.DetailView):
 @login_required
 def delete_workout(request, username, slug):
     workout = Workout.objects.filter(user__username=username, slug=slug).get()
+
+    if not user_permissions(request, workout.user):
+        return page_not_found(request)
 
     if request.method == 'GET':
         form = DeleteWorkoutForm(instance=workout)

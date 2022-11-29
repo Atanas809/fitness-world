@@ -4,6 +4,9 @@ from django.shortcuts import redirect
 from django.views import generic
 from django.urls import reverse_lazy
 
+from fitness_world import settings
+from fitness_world.common.views import page_not_found
+from fitness_world.core.core_utils import user_permissions
 from fitness_world.core.photo_utils import photo_likes_count
 from fitness_world.core.user_utils import likes_for_photos_delete, comments_for_photos_delete, workouts_delete
 from fitness_world.photos.models import Photo
@@ -37,10 +40,24 @@ class SignOutView(auth_mixins.LoginRequiredMixin, auth_views.LogoutView):
     next_page = reverse_lazy('index')
 
 
-class DeleteUserView(auth_mixins.LoginRequiredMixin, generic.DeleteView):
+class DeleteUserView(auth_mixins.LoginRequiredMixin, auth_mixins.UserPassesTestMixin, generic.DeleteView):
     template_name = 'profiles/profile-delete-page.html'
     model = UserModel
     success_url = reverse_lazy('sign in')
+
+    def test_func(self):
+        try:
+            user_pk = self.kwargs.get('pk')
+            owner = UserModel.objects.filter(pk=user_pk).get()
+            return user_permissions(self.request, owner)
+        except UserModel.DoesNotExist:
+            page_not_found(self.request)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+
+        return page_not_found(self.request)
 
     def form_valid(self, form):
         success_url = self.get_success_url()
@@ -76,12 +93,27 @@ class DetailsUserView(auth_mixins.LoginRequiredMixin, generic.DetailView):
         return context
 
 
-class EditUserView(auth_mixins.LoginRequiredMixin, generic.UpdateView):
+class EditUserView(auth_mixins.LoginRequiredMixin, auth_mixins.UserPassesTestMixin, generic.UpdateView):
     template_name = 'profiles/profile-edit-page.html'
     model = UserModel
     fields = ('username', 'email', 'first_name', 'last_name', 'profile_picture', 'weight', 'gender')
+
+    def test_func(self):
+        try:
+            user_pk = self.kwargs.get('pk')
+            owner = UserModel.objects.filter(pk=user_pk).get()
+            return user_permissions(self.request, owner)
+        except UserModel.DoesNotExist:
+            page_not_found(self.request)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+
+        return page_not_found(self.request)
 
     def get_success_url(self):
         return reverse_lazy('details user', kwargs={
             'pk': self.object.pk,
         })
+

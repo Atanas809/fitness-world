@@ -1,13 +1,24 @@
 import pyperclip
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
+
+from fitness_world import settings
 from fitness_world.common.forms import CommentCreateForm, CommentEditForm, CommentDeleteForm, SearchForm
 from fitness_world.common.models import LikePhoto, CommentPhoto
+from fitness_world.core.core_utils import user_permissions
 from fitness_world.core.photo_utils import photo_is_liked_by_user, photo_likes_count
 from fitness_world.photos.models import Photo
+
+UserModel = get_user_model()
+
+
+def page_not_found(request):
+    return render(request, 'page-not-found.html')
 
 
 # Tested
@@ -83,6 +94,9 @@ def delete_comment(request, pk):
     comment = CommentPhoto.objects.filter(pk=pk).get()
     photo = comment.photo
 
+    if not user_permissions(request, comment.user):
+        return page_not_found(request)
+
     if request.method == 'GET':
         form = CommentDeleteForm(instance=comment)
     else:
@@ -100,10 +114,25 @@ def delete_comment(request, pk):
     return render(request, 'comments/delete-comment-page.html', context)
 
 
-class EditCommentView(LoginRequiredMixin, generic.UpdateView):
+class EditCommentView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     template_name = 'comments/edit-comment-page.html'
     model = CommentPhoto
     form_class = CommentEditForm
+
+    def test_func(self):
+        try:
+            comment = CommentPhoto.objects.get(pk=self.kwargs.get('pk'))
+            user_pk = comment.user.pk
+            owner = UserModel.objects.filter(pk=user_pk).get()
+            return user_permissions(self.request, owner)
+        except CommentPhoto.DoesNotExist:
+            page_not_found(self.request)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+
+        return page_not_found(self.request)
 
     def get_success_url(self):
         return reverse_lazy('details photo', kwargs={'pk': self.object.photo.pk})

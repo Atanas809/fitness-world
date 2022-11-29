@@ -1,7 +1,5 @@
 from enum import Enum
 
-from django.shortcuts import render
-
 
 class ChoicesMixin(Enum):
     @classmethod
