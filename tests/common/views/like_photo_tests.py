@@ -6,12 +6,6 @@ from tests.base.base_test_case import BaseTestCase
 
 
 class LikePhotoTests(BaseTestCase):
-    CREDENTIALS = {
-            'username': 'gogo110',
-            'email': 'gogo110@abv.bg',
-            'password': 'Toni@34',
-        }
-
     def test_like_photo__when_no_authenticated_user__expect_to_redirect(self):
         response = self.client.get(reverse_lazy('like photo', kwargs={'pk': 1}))
 
@@ -20,7 +14,7 @@ class LikePhotoTests(BaseTestCase):
         self.assertEqual(302, response.status_code)
 
     def test_like_photo__when_authenticated_user_like_new_photo__expect_create_like(self):
-        user = self.create_and_login_user(**self.CREDENTIALS)
+        user = self.create_and_login_user()
 
         photo = self.create_photos(user, count=1)[0]
 
@@ -31,7 +25,7 @@ class LikePhotoTests(BaseTestCase):
         self.assertEqual(1, len(likes))
 
     def test_like_photo__when_authenticated_user_like_same_photo__expect_to_delete_like(self):
-        user = self.create_and_login_user(**self.CREDENTIALS)
+        user = self.create_and_login_user()
 
         photo = self.create_photos(user, count=1)[0]
 

@@ -74,6 +74,7 @@ def like_photo(request, pk):
     return redirect(url_to_redirect)
 
 
+# Tested
 @login_required
 def create_comment(request, pk):
     photo = Photo.objects.filter(pk=pk).get()
@@ -86,9 +87,10 @@ def create_comment(request, pk):
         comment.user = request.user
         comment.save()
 
-    return redirect(request.META['HTTP_REFERER'])
+    return redirect('details photo', pk=photo.pk)
 
 
+# Tested
 @login_required
 def delete_comment(request, pk):
     comment = CommentPhoto.objects.filter(pk=pk).get()

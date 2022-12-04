@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
+from fitness_world.common.models import LikePhoto, CommentPhoto
 from fitness_world.core.mixins import FieldsMixin
 from fitness_world.photos.models import Photo
 
@@ -68,6 +69,8 @@ class DeletePhotoForm(FieldsMixin, PhotoBaseForm):
 
     def save(self, commit=True):
         if commit:
+            LikePhoto.objects.filter(photo_id=self.instance.pk).delete()
+            CommentPhoto.objects.filter(photo_id=self.instance.pk).delete()
             self.instance.delete()
 
         return self.instance

@@ -11,6 +11,9 @@ class Workout(models.Model):
     MAX_LEN_NAME = 40
     MIN_LEN_NAME = 3
 
+    class Meta:
+        ordering = ('-pk',)
+
     name = models.CharField(
         null=False,
         blank=False,

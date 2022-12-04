@@ -16,8 +16,6 @@ from fitness_world.workouts.models import Workout
 UserModel = get_user_model()
 
 
-# TODO: Implement only owners can edt/delete their content!!!
-
 class SignInView(auth_views.LoginView):
     form_class = SignInForm
     template_name = 'profiles/login-page.html'
@@ -43,7 +41,7 @@ class SignOutView(auth_mixins.LoginRequiredMixin, auth_views.LogoutView):
 class DeleteUserView(auth_mixins.LoginRequiredMixin, auth_mixins.UserPassesTestMixin, generic.DeleteView):
     template_name = 'profiles/profile-delete-page.html'
     model = UserModel
-    success_url = reverse_lazy('sign in')
+    success_url = reverse_lazy('index')
 
     def test_func(self):
         try:

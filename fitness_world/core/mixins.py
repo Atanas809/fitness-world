@@ -12,6 +12,7 @@ class ChoicesMixin(Enum):
 
 
 class FieldsMixin:
+    disabled_attr_name = 'disabled'
     disabled_fields = ()
     fields = {}
 
@@ -24,5 +25,5 @@ class FieldsMixin:
         for field_name in fields:
             if field_name in self.fields:
                 field = self.fields[field_name]
-                field.widget.attrs['disabled'] = 'disabled'
+                field.widget.attrs[self.disabled_attr_name] = self.disabled_attr_name
                 field.required = False
