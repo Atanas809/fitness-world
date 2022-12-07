@@ -63,7 +63,7 @@ class DeleteUserView(auth_mixins.LoginRequiredMixin, auth_mixins.UserPassesTestM
         owned_photos = Photo.objects.filter(user_id=self.object.pk).all()
 
         workouts_delete(user=self.object)
-        likes_for_photos_delete(owned_photos)
+        likes_for_photos_delete(owned_photos, self.object)
         comments_for_photos_delete(owned_photos, self.object)
         owned_photos.delete()
 
