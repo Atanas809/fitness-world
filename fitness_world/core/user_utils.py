@@ -1,4 +1,4 @@
-from fitness_world.common.models import CommentPhoto
+from fitness_world.common.models import CommentPhoto, LikePhoto
 from fitness_world.workouts.models import Workout
 
 
