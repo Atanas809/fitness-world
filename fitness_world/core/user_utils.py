@@ -6,9 +6,11 @@ def workouts_delete(user):
     Workout.objects.filter(user_id=user.pk).all().delete()
 
 
-def likes_for_photos_delete(photos):
+def likes_for_photos_delete(photos, user):
     for photo in photos:
         photo.likephoto_set.all().delete()
+
+    LikePhoto.objects.filter(user_id=user.pk).all().delete()
 
 
 def comments_for_photos_delete(photos, user):
